@@ -5,8 +5,32 @@
 (Android logcat, метка "python") и в файл crash.txt рядом с диском.
 """
 
+import faulthandler
 import os
 import traceback
+
+# Отчёт о прошлом нативном сбое (segfault и т.п.), записанный faulthandler.
+PREVIOUS_CRASH = ""
+
+
+def _setup_faulthandler():
+    """Пишем трассировку нативных сбоев в файл и показываем её при следующем запуске."""
+    global PREVIOUS_CRASH
+    base = os.environ.get("ANDROID_PRIVATE") or os.path.join(os.path.expanduser("~"), ".microos")
+    try:
+        os.makedirs(base, exist_ok=True)
+        path = os.path.join(base, "microos_fault.txt")
+        if os.path.exists(path):
+            with open(path, encoding="utf-8", errors="replace") as f:
+                PREVIOUS_CRASH = f.read().strip()
+        if PREVIOUS_CRASH:
+            print("MICROOS PREVIOUS NATIVE CRASH:\n" + PREVIOUS_CRASH)
+        fault_file = open(path, "w")
+        faulthandler.enable(file=fault_file, all_threads=True)
+        return fault_file
+    except Exception:
+        print("MICROOS: faulthandler не включён\n" + traceback.format_exc())
+        return None
 
 
 def show_crash(text):
@@ -42,9 +66,10 @@ def show_crash(text):
 
 
 def main():
+    _fault_file = _setup_faulthandler()  # noqa: F841 (файл должен оставаться открытым)
     try:
         from app import MicroOSApp
-        MicroOSApp().run()
+        MicroOSApp(previous_crash=PREVIOUS_CRASH).run()
     except Exception:
         show_crash(traceback.format_exc())
 

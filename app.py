@@ -185,6 +185,10 @@ class Terminal(BoxLayout):
 class MicroOSApp(App):
     title = NAME
 
+    def __init__(self, previous_crash="", **kw):
+        super().__init__(**kw)
+        self.previous_crash = previous_crash
+
     def build(self):
         Window.clearcolor = BG
         if platform == "android":
@@ -218,6 +222,10 @@ class MicroOSApp(App):
                 self.term.write("ОШИБКА ЗАГРУЗКИ:\n" + traceback.format_exc())
                 return
             self.term.write("")
+            if self.previous_crash:
+                self.term.write("ВНИМАНИЕ: прошлый запуск завершился сбоем. "
+                                "Пришлите этот текст разработчику:\n" + self.previous_crash)
+                self.previous_crash = ""
             self.term.write(self.shell.banner())
             self.term.update_columns()
             self.term.refresh_prompt()
