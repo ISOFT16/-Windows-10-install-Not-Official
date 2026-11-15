@@ -24,6 +24,13 @@ jobs:
   apk:
     needs: tests
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # arm64-v8a — для телефонов; x86_64 — для проверки в эмуляторе
+        arch: [arm64-v8a, x86_64]
+    env:
+      APP_ANDROID_ARCHS: ${{ matrix.arch }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,7 +50,7 @@ jobs:
             zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
 
       - name: Установка Buildozer
-        run: pip install --upgrade buildozer "cython==3.0.11" setuptools
+        run: pip install --upgrade buildozer "cython<3.1" setuptools
 
       - name: Кэш Android SDK/NDK
         uses: actions/cache@v4
@@ -51,7 +58,7 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: buildozer-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-${{ matrix.arch }}-${{ hashFiles('buildozer.spec') }}
 
       - name: Сборка APK
         run: yes | buildozer -v android debug
@@ -59,11 +66,47 @@ jobs:
       - name: Загрузка APK
         uses: actions/upload-artifact@v4
         with:
-          name: MicroOS-apk
+          name: ${{ matrix.arch == 'arm64-v8a' && 'MicroOS-apk' || 'MicroOS-x86_64-test' }}
           path: bin/*.apk
 
       - name: Публикация релиза (для тегов v*)
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.arch == 'arm64-v8a'
         uses: softprops/action-gh-release@v2
         with:
           files: bin/*.apk
+
+  # Устанавливает APK в эмулятор Android 15 с 16 КБ страницами памяти
+  # и проверяет, что приложение запускается и не вылетает.
+  smoke-test:
+    needs: apk
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: MicroOS-x86_64-test
+          path: apk
+
+      - name: Включить KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Запуск в эмуляторе
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis_ps16k
+          arch: x86_64
+          script: bash tests/android_smoke.sh
+
+      - name: Лог и скриншот
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-log
+          path: |
+            logcat.txt
+            screen.png

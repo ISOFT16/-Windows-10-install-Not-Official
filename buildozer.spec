@@ -28,13 +28,10 @@ fullscreen = 0
 # --- Android ---
 android.api = 34
 android.minapi = 24
-android.archs = arm64-v8a, armeabi-v7a
+# Только arm64: она есть почти на всех телефонах. Сборка сразу под несколько
+# архитектур ломает шаг pip в python-for-android.
+android.archs = arm64-v8a
 android.accept_sdk_license = True
-android.ndk = 25b
-
-# Проверенная стабильная версия python-for-android (Python 3.11).
-# В самой свежей версии сломан шаг установки pip-модулей.
-p4a.branch = v2024.01.21
 android.allow_backup = True
 # Особые разрешения не нужны: диск MicroOS хранится в личной папке приложения
 android.permissions =
