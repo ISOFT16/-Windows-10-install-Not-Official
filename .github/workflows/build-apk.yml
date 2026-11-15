@@ -43,7 +43,7 @@ jobs:
             zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
 
       - name: Установка Buildozer
-        run: pip install --upgrade buildozer "cython<3.1" setuptools
+        run: pip install --upgrade buildozer "cython==3.0.11" setuptools
 
       - name: Кэш Android SDK/NDK
         uses: actions/cache@v4
