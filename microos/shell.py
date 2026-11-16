@@ -17,7 +17,6 @@ import math
 import operator
 import posixpath
 import re
-import shlex
 import sys
 import threading
 import time
@@ -158,10 +157,56 @@ class Shell:
 
     @staticmethod
     def _tokenize(line):
-        lex = shlex.shlex(line, posix=True, punctuation_chars="|;>&")
-        lex.whitespace_split = True
-        lex.commenters = ""
-        return lex
+        """Разбивает строку на слова и операторы | ; & > >>, учитывая кавычки.
+
+        Свой разборщик вместо shlex: в Python 3.7 shlex не отделяет «;» от слова.
+        """
+        tokens, buf = [], []
+        quoted = False  # было ли слово в кавычках (тогда пустое слово "" тоже токен)
+        quote = None
+        i, n = 0, len(line)
+
+        def flush():
+            nonlocal quoted
+            if buf or quoted:
+                tokens.append("".join(buf))
+                buf.clear()
+            quoted = False
+
+        while i < n:
+            c = line[i]
+            if quote:
+                if c == quote:
+                    quote = None
+                elif c == "\\" and quote == '"' and i + 1 < n and line[i + 1] in '"\\$':
+                    i += 1
+                    buf.append(line[i])
+                else:
+                    buf.append(c)
+            elif c in "\"'":
+                quote, quoted = c, True
+            elif c == "\\" and i + 1 < n:
+                i += 1
+                buf.append(line[i])
+            elif c.isspace():
+                flush()
+            elif c in "|;&":
+                flush()
+                tokens.append(c)
+            elif c == ">":
+                flush()
+                if i + 1 < n and line[i + 1] == ">":
+                    tokens.append(">>")
+                    i += 1
+                else:
+                    tokens.append(">")
+            else:
+                buf.append(c)
+            i += 1
+        if quote:
+            raise ValueError("не закрыта кавычка")
+        flush()
+        return tokens
 
     @staticmethod
     def _split(tokens, sep):
@@ -921,6 +966,8 @@ def _calc(node):
         return _calc(node.body)
     if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
         return node.value
+    if sys.version_info < (3, 8) and isinstance(node, ast.Num):  # Python 3.7
+        return node.n
     if isinstance(node, ast.BinOp) and type(node.op) in _OPS:
         left, right = _calc(node.left), _calc(node.right)
         if isinstance(node.op, ast.Pow) and abs(right) > 1000:

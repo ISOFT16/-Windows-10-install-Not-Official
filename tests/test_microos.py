@@ -65,6 +65,11 @@ class TestFS(Base):
 
 
 class TestShell(Base):
+    def test_tokenize(self):
+        from microos.shell import Shell
+        self.assertEqual(Shell._tokenize('echo a>f;cat "x y"|wc'),
+                         ["echo", "a", ">", "f", ";", "cat", "x y", "|", "wc"])
+
     def test_pipes(self):
         self.run_cmd("echo b > f; echo a >> f; echo b >> f")
         self.assertEqual(self.run_cmd("cat f | sort | uniq"), "a\nb")
