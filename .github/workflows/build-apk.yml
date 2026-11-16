@@ -136,6 +136,36 @@ jobs:
         with:
           files: MicroOS-Windows-${{ matrix.arch }}.zip
 
+  # Выкладывает готовые файлы в раздел Releases (удобно скачивать, в т.ч. с телефона)
+  release:
+    needs: [apk, windows]
+    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dl
+
+      - name: Подготовка файлов
+        run: |
+          mkdir out
+          cp dl/MicroOS-apk/*.apk out/MicroOS-Android.apk
+          cp dl/MicroOS-Windows-x64/*.zip out/
+          cp dl/MicroOS-Windows-x86/*.zip out/
+          ls -la out
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: MicroOS (сборка ${{ github.run_number }})
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: |
+            **Android:** MicroOS-Android.apk — установить на телефон (Android 7+, 64-бит).
+            **Windows 7/8/10/11:** MicroOS-Windows-x64.zip (64-бит) или MicroOS-Windows-x86.zip (32-бит).
+            Распакуйте архив и запустите MicroOS.exe. Если не открывается — «MicroOS (DirectX).bat» или MicroOS-Console.exe.
+          files: out/*
+
   # Устанавливает APK в эмулятор Android 15 с 16 КБ страницами памяти
   # и проверяет, что приложение запускается и не вылетает.
   smoke-test:
