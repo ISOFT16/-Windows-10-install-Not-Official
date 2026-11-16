@@ -9,6 +9,7 @@ import traceback
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
+from kivy.graphics import Color, Rectangle
 from kivy.metrics import dp, sp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -32,6 +33,11 @@ class Terminal(BoxLayout):
     def __init__(self, app, **kw):
         super().__init__(orientation="vertical", **kw)
         self.app = app
+        with self.canvas.before:  # свой тёмный фон: терминал живёт в окне рабочего стола
+            Color(*BG)
+            self._bg = Rectangle(pos=self.pos, size=self.size)
+        self.bind(pos=lambda w, v: setattr(self._bg, "pos", v),
+                  size=lambda w, v: setattr(self._bg, "size", v))
         self.font_size = FONT_SIZE
         self.lines: list[str] = []
         self.hist_pos = None
@@ -197,8 +203,11 @@ class MicroOSApp(App):
         self.kernel = None
         self.shell = None
         self.term = Terminal(self)
+        from desktop import Desktop
+        self.desktop = Desktop(self)
+        Clock.schedule_once(lambda dt: self.desktop.open_app("terminal", maximized=True), 0)
         Clock.schedule_once(lambda dt: self.start_boot(), 0.2)
-        return self.term
+        return self.desktop
 
     def disk_path(self):
         try:
