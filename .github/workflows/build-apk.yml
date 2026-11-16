@@ -92,9 +92,12 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Установка Kivy и PyInstaller
+        shell: bash
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "kivy[base]>=2.3,<2.4" "pyinstaller==5.13.2"
+          # для 32-битной Windows готовые пакеты Kivy под Python 3.8 есть только до 2.2.x
+          if [ "${{ matrix.arch }}" = "x86" ]; then KIVY="kivy[base]==2.2.1"; else KIVY="kivy[base]>=2.3,<2.4"; fi
+          python -m pip install --only-binary=kivy,kivy-deps.sdl2,kivy-deps.glew,kivy-deps.angle "$KIVY" "pyinstaller==5.13.2"
 
       - name: Тесты на Python 3.8
         run: python -m unittest -v tests.test_microos
