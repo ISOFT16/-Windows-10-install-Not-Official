@@ -3,6 +3,8 @@
 Запускается через main.py (точка входа APK), который ловит ошибки старта.
 """
 
+from __future__ import annotations
+
 import os
 import traceback
 

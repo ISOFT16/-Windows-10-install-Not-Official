@@ -5,6 +5,8 @@
 Список картинок и их размеры — в словаре SKIN ниже.
 """
 
+from __future__ import annotations
+
 import os
 import time
 

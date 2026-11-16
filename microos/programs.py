@@ -3,6 +3,8 @@
 Каждая программа — генератор, получающий ctx (см. kernel.ProcContext).
 """
 
+from __future__ import annotations
+
 import time
 
 

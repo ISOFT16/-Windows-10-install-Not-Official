@@ -75,6 +75,56 @@ jobs:
         with:
           files: bin/*.apk
 
+  # Windows 7+: папка с MicroOS.exe в ZIP-архиве (Python 3.8 — последний для Windows 7)
+  windows:
+    needs: tests
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+          architecture: ${{ matrix.arch }}
+
+      - name: Установка Kivy и PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "kivy[base]>=2.3,<2.4" "pyinstaller==5.13.2"
+
+      - name: Тесты на Python 3.8
+        run: python -m unittest -v tests.test_microos
+
+      - name: Сборка exe
+        run: pyinstaller --noconfirm windows/microos.spec
+
+      - name: Проверка консольной версии
+        shell: bash
+        run: printf 'uname -a\ncalc 2+2\nshutdown\n' | MICROOS_DISK="$RUNNER_TEMP/disk.json" dist/MicroOS/MicroOS-Console.exe
+
+      - name: Упаковка в ZIP
+        shell: pwsh
+        run: |
+          Copy-Item "windows/README.txt" "dist/MicroOS/README.txt"
+          Copy-Item "windows/MicroOS (DirectX).bat" "dist/MicroOS/"
+          Compress-Archive -Path dist/MicroOS -DestinationPath "MicroOS-Windows-${{ matrix.arch }}.zip"
+
+      - name: Загрузка ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: MicroOS-Windows-${{ matrix.arch }}
+          path: MicroOS-Windows-${{ matrix.arch }}.zip
+
+      - name: Публикация релиза (для тегов v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: MicroOS-Windows-${{ matrix.arch }}.zip
+
   # Устанавливает APK в эмулятор Android 15 с 16 КБ страницами памяти
   # и проверяет, что приложение запускается и не вылетает.
   smoke-test:

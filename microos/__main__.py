@@ -1,5 +1,7 @@
 """Консольный запуск MicroOS на компьютере:  python -m microos"""
 
+from __future__ import annotations
+
 import getpass
 import os
 import sys
@@ -32,6 +34,10 @@ def setup_readline(shell):
 
 
 def main():
+    # При выводе в файл/конвейер Windows использует cp1252 — переключаемся на UTF-8
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure") and not stream.isatty():
+            stream.reconfigure(encoding="utf-8", errors="replace")
     disk = sys.argv[1] if len(sys.argv) > 1 else default_disk()
     while True:
         for msg in boot_messages():
@@ -57,7 +63,10 @@ def main():
             out = shell.execute(line)
             if shell.clear_requested:
                 shell.clear_requested = False
-                print("\033[2J\033[H", end="")
+                if os.name == "nt":
+                    os.system("cls")  # консоль Windows 7 не понимает ANSI-коды
+                else:
+                    print("\033[2J\033[H", end="")
             if out:
                 print(out)
         kernel.shutdown()

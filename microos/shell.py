@@ -8,6 +8,8 @@
 переменные `$VAR`, история, автодополнение по Tab.
 """
 
+from __future__ import annotations
+
 import ast
 import calendar
 import fnmatch

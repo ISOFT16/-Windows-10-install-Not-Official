@@ -6,6 +6,8 @@
 (round-robin), поэтому фоновые процессы живут, пока вы работаете в оболочке.
 """
 
+from __future__ import annotations
+
 import hashlib
 import threading
 import time

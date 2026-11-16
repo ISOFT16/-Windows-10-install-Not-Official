@@ -3,6 +3,8 @@
 Всё дерево хранится в памяти и сохраняется на "диск" — JSON-файл образа.
 """
 
+from __future__ import annotations
+
 import json
 import os
 import posixpath

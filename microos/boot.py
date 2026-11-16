@@ -1,5 +1,7 @@
 """Загрузчик: создаёт ядро и оболочку, выдаёт сообщения загрузки."""
 
+from __future__ import annotations
+
 from . import NAME, __version__
 from .kernel import Kernel
 from .shell import Shell

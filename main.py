@@ -5,6 +5,8 @@
 (Android logcat, метка "python") и в файл crash.txt рядом с диском.
 """
 
+from __future__ import annotations
+
 import faulthandler
 import os
 import traceback
