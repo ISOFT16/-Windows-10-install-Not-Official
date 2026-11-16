@@ -79,6 +79,13 @@ jobs:
   windows:
     needs: tests
     runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      # без видеокарты Kivy показывает окно с ошибкой OpenGL и ждёт нажатия —
+      # во время сборки отключаем графику и разбор аргументов Kivy
+      KIVY_GL_BACKEND: mock
+      KIVY_NO_ARGS: "1"
+      KIVY_NO_CONSOLELOG: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -103,6 +110,7 @@ jobs:
         run: python -m unittest -v tests.test_microos
 
       - name: Сборка exe
+        timeout-minutes: 15
         run: pyinstaller --noconfirm windows/microos.spec
 
       - name: Проверка консольной версии
