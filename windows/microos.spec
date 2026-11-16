@@ -1,5 +1,5 @@
 # -*- mode: python -*-
-# Сборка MicroOS для Windows 7+ (PyInstaller 5, Python 3.8):
+# Сборка MicroOS для Windows 7+ (PyInstaller 5, Python 3.7):
 #   pyinstaller --noconfirm windows/microos.spec
 # Результат: dist/MicroOS/ (MicroOS.exe — графика, MicroOS-Console.exe — консоль)
 
@@ -10,6 +10,10 @@ from kivy.tools.packaging.pyinstaller_hooks import get_deps_minimal, hookspath, 
 ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))
 deps = get_deps_minimal(video=None, audio=None, camera=None, spelling=None)
 deps["hiddenimports"] = deps.get("hiddenimports", []) + ["app", "desktop"]
+# pywin32 не нужен; его загрузчик (add_dll_directory) не работает на чистой Windows 7
+PYWIN32 = ["win32api", "win32con", "win32gui", "win32file", "pywintypes", "pythoncom",
+           "win32com", "win32timezone", "pywin32_system32"]
+deps["excludes"] = deps.get("excludes", []) + PYWIN32
 try:
     from kivy_deps import angle
     dep_bins = sdl2.dep_bins + glew.dep_bins + angle.dep_bins
@@ -27,7 +31,7 @@ gui = Analysis(
 console = Analysis(
     [os.path.join(ROOT, "windows", "console_main.py")],
     pathex=[ROOT],
-    excludes=["kivy", "kivy_deps"],
+    excludes=["kivy", "kivy_deps"] + PYWIN32,
 )
 
 gui_exe = EXE(

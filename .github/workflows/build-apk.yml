@@ -75,7 +75,8 @@ jobs:
         with:
           files: bin/*.apk
 
-  # Windows 7+: папка с MicroOS.exe в ZIP-архиве (Python 3.8 — последний для Windows 7)
+  # Windows 7+: папка с MicroOS.exe в ZIP-архиве.
+  # Python 3.7: в отличие от 3.8 не требует обновления Windows 7 KB2533623 (AddDllDirectory)
   windows:
     needs: tests
     runs-on: windows-2022
@@ -95,18 +96,19 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.8"
+          python-version: "3.7"
           architecture: ${{ matrix.arch }}
 
       - name: Установка Kivy и PyInstaller
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          # для 32-битной Windows готовые пакеты Kivy под Python 3.8 есть только до 2.2.x
-          if [ "${{ matrix.arch }}" = "x86" ]; then KIVY="kivy[base]==2.2.1"; else KIVY="kivy[base]>=2.3,<2.4"; fi
-          python -m pip install --only-binary=kivy,kivy-deps.sdl2,kivy-deps.glew,kivy-deps.angle "$KIVY" "pyinstaller==5.13.2"
+          # Kivy 2.2.1 — последняя версия с готовыми пакетами для Python 3.7 (x64 и x86)
+          python -m pip install --only-binary=kivy,kivy-deps.sdl2,kivy-deps.glew,kivy-deps.angle "kivy[base]==2.2.1" "pyinstaller==5.13.2"
+          # pywin32 не нужен MicroOS, а его загрузчик ломает запуск на Windows 7
+          python -m pip uninstall -y pywin32 pypiwin32 || true
 
-      - name: Тесты на Python 3.8
+      - name: Тесты на Python 3.7
         run: python -m unittest -v tests.test_microos
 
       - name: Сборка exe
