@@ -9,7 +9,22 @@
 
 ![Экран RustOS](docs/screen.png)
 
-## Запуск
+## Готовый ISO-образ (самый простой способ)
+
+Файл **[`dist/RustOS.iso`](dist/RustOS.iso)** уже собран, ничего компилировать не нужно.
+
+* **QEMU (Windows):** двойной щелчок по `dist/run.bat`, или в терминале:
+  `qemu-system-x86_64 -m 128M -cdrom RustOS.iso`
+* **QEMU (Linux/macOS):** `./dist/run.sh`
+* **VirtualBox:** «Создать» → тип *Other*, версия *Other/Unknown (64-bit)*, память 128 МБ,
+  без жёсткого диска → в настройках «Носители» подключить `RustOS.iso` как оптический диск → «Запустить».
+* **Реальный компьютер:** записать ISO на флешку программой Rufus (режим **DD**) или `dd`,
+  в BIOS включить загрузку Legacy/CSM и загрузиться с флешки.
+
+В меню загрузчика GRUB есть два пункта: обычный запуск и запуск с самотестами.
+Свежий ISO также публикуется на GitHub в разделе **Releases** после каждого изменения.
+
+## Сборка из исходников
 
 Нужны: Rust (через [rustup](https://rustup.rs)) и QEMU (`qemu-system-x86_64` должен быть в `PATH`).
 
@@ -84,10 +99,10 @@ powershell -ExecutionPolicy Bypass -File scripts\selftest.ps1   # Windows
 
 ```bash
 sudo apt install grub-pc-bin grub-common xorriso mtools   # один раз
-./scripts/make-iso.sh                                     # получится rustos.iso
+./scripts/make-iso.sh                                     # получится dist/RustOS.iso
 ```
 
-`rustos.iso` можно подключить в VirtualBox/VMware как CD или записать на флешку
+`RustOS.iso` можно подключить в VirtualBox/VMware как CD или записать на флешку
 (например, `dd` или Rufus в режиме DD). Компьютер должен загружаться в режиме
 **BIOS / Legacy (CSM)**: в чистом UEFI нет текстового режима VGA.
 

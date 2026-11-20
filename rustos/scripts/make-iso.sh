@@ -24,7 +24,8 @@ menuentry "RustOS (self-test)" {
     boot
 }
 CFG
-grub-mkrescue -o rustos.iso isodir 2>/dev/null
+mkdir -p dist
+grub-mkrescue -o dist/RustOS.iso isodir 2>/dev/null
 rm -rf isodir
-echo "Готово: rustos.iso"
-echo "Проверка: qemu-system-x86_64 -m 128M -cdrom rustos.iso"
+echo "Готово: dist/RustOS.iso"
+echo "Проверка: qemu-system-x86_64 -m 128M -cdrom dist/RustOS.iso"

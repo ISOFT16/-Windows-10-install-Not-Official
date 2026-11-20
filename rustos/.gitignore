@@ -1,3 +1,4 @@
 target/
 *.iso
+!dist/RustOS.iso
 isodir/
