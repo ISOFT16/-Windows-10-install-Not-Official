@@ -1,0 +1,48 @@
+name: RustOS
+
+on:
+  push:
+    paths:
+      - "rustos/**"
+      - ".github/workflows/rustos.yml"
+  pull_request:
+    paths:
+      - "rustos/**"
+      - ".github/workflows/rustos.yml"
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: rustos
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU and GRUB tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 grub-pc-bin grub-common xorriso mtools
+
+      - name: Install Rust target
+        run: rustup show
+
+      - name: Build (debug and release)
+        run: |
+          cargo build
+          cargo build --release
+
+      - name: Self-tests in QEMU
+        run: ./scripts/selftest.sh
+
+      - name: Bootable ISO
+        run: ./scripts/make-iso.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rustos
+          path: |
+            rustos/rustos.iso
+            rustos/target/x86_64-unknown-none/release/rustos

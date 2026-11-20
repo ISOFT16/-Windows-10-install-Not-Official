@@ -1,0 +1,22 @@
+[package]
+name = "rustos"
+version = "0.1.0"
+edition = "2021"
+description = "RustOS: a small, defensive x86_64 kernel written in Rust"
+build = "build.rs"
+
+# No external crates: the kernel builds offline with only the stable toolchain.
+[dependencies]
+
+[profile.dev]
+panic = "abort"
+opt-level = 1
+
+[profile.release]
+panic = "abort"
+opt-level = 2
+lto = true
+codegen-units = 1
+# Integer overflow becomes a diagnosed panic instead of silent corruption.
+overflow-checks = true
+debug-assertions = false
