@@ -46,7 +46,7 @@ use vga::Color;
 /// Версия системы (берётся из Cargo.toml): «1.0», «1.1», ...
 pub const VERSION: &str = concat!(env!("CARGO_PKG_VERSION_MAJOR"), ".", env!("CARGO_PKG_VERSION_MINOR"));
 /// Кодовое имя выпуска: C1, C2, C3, ... (увеличивается с каждым обновлением).
-pub const CODENAME: &str = "C3";
+pub const CODENAME: &str = "C4";
 
 fn ok(msg: core::fmt::Arguments) {
     cprint!(Color::LightGreen, "  [ OK ] ");
@@ -150,7 +150,10 @@ pub extern "C" fn kernel_main(magic: u32, mbi: u32) -> ! {
     } else {
         match gfx::init() {
             Some(fb) => {
-                ok(format_args!("Graphics {}x{}x{} ({}), starting the desktop", fb.width, fb.height, fb.bpp, fb.source));
+                ok(format_args!(
+                    "Graphics {}x{}x{} ({}, {}), starting the desktop",
+                    fb.width, fb.height, fb.bpp, fb.source, fb.layout()
+                ));
                 desktop::run();
             }
             None => warn(format_args!("No graphics adapter found, staying in text mode")),

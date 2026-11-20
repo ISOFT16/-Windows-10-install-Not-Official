@@ -158,7 +158,9 @@ pub fn parse(magic: u32, mbi: u32) -> bool {
                 }
             }
         }
-        if flags & (1 << 12) != 0 && valid_ptr(mbi, 116) {
+        if flags & (1 << 12) != 0 && valid_ptr(mbi, 118) {
+            // Поля цвета лежат по смещению 112, а не 110, как в тексте спецификации:
+            // в реальной структуре GRUB объединение выровнено на 4 байта.
             let b = |o: u64| *((mbi + o) as *const u8);
             info.framebuffer = Some(Framebuffer {
                 addr: read_u64(mbi + 88),
@@ -167,9 +169,9 @@ pub fn parse(magic: u32, mbi: u32) -> bool {
                 height: read_u32(mbi + 104),
                 bpp: b(108),
                 kind: b(109),
-                red_pos: b(110),
-                green_pos: b(112),
-                blue_pos: b(114),
+                red_pos: b(112),
+                green_pos: b(114),
+                blue_pos: b(116),
             });
         }
         if flags & (1 << 9) != 0 {

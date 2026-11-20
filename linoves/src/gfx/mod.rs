@@ -10,6 +10,8 @@
 
 pub mod font;
 mod font_data;
+pub mod ui;
+mod ui_data;
 
 use crate::console::{Cell, TextGrid, GRID_COLS, GRID_ROWS};
 use crate::cpu::{inw, outw};
@@ -76,6 +78,11 @@ pub struct FbInfo {
 }
 
 impl FbInfo {
+    /// Порядок цветовых каналов, например «R16 G8 B0».
+    pub fn layout(&self) -> alloc::string::String {
+        alloc::format!("R{} G{} B{}", self.red_pos, self.green_pos, self.blue_pos)
+    }
+
     fn native(&self) -> bool {
         self.bpp == 32 && self.red_pos == 16 && self.green_pos == 8 && self.blue_pos == 0
     }
@@ -382,11 +389,46 @@ impl<'a> Canvas<'a> {
         }
     }
 
-    pub fn rect(&mut self, x: i32, y: i32, w: i32, h: i32, c: Color) {
-        self.fill_rect(x, y, w, 1, c);
-        self.fill_rect(x, y + h - 1, w, 1, c);
-        self.fill_rect(x, y, 1, h, c);
-        self.fill_rect(x + w - 1, y, 1, h, c);
+    pub fn fill_rect_alpha(&mut self, x: i32, y: i32, w: i32, h: i32, c: Color, a: u32) {
+        let r = self.abs_rect(x, y, w, h);
+        if r.is_empty() {
+            return;
+        }
+        for yy in r.y..r.y + r.h {
+            let s = yy as usize * self.stride + r.x as usize;
+            for p in &mut self.buf[s..s + r.w as usize] {
+                *p = blend(*p, c, a);
+            }
+        }
+    }
+
+    /// Вертикальный градиент.
+    pub fn gradient(&mut self, x: i32, y: i32, w: i32, h: i32, top: Color, bottom: Color) {
+        let span = (h - 1).max(1) as u32;
+        for i in 0..h {
+            let a = (i as u32 * 255) / span;
+            self.fill_rect(x, y + i, w, 1, blend(top, bottom, a));
+        }
+    }
+
+    /// Прямоугольник со скруглёнными углами (со сглаживанием), непрозрачность `a`.
+    pub fn round_rect(&mut self, x: i32, y: i32, w: i32, h: i32, r: i32, c: Color, a: u32) {
+        let r = r.min(w / 2).min(h / 2).max(0);
+        self.fill_rect_alpha(x, y + r, w, h - 2 * r, c, a);
+        for i in 0..r {
+            let dy = r as f32 - i as f32 - 0.5;
+            let dx = sqrt((r * r) as f32 - dy * dy);
+            let inset = r as f32 - dx;
+            let full = ceil(inset);
+            let frac = ((full as f32 - inset) * a as f32) as u32;
+            for &yy in &[y + i, y + h - 1 - i] {
+                self.fill_rect_alpha(x + full, yy, w - 2 * full, 1, c, a);
+                if full > 0 {
+                    self.blend_pixel(x + full - 1, yy, c, frac);
+                    self.blend_pixel(x + w - full, yy, c, frac);
+                }
+            }
+        }
     }
 
     pub fn fill_circle(&mut self, cx: i32, cy: i32, r: i32, c: Color) {
@@ -451,16 +493,15 @@ impl<'a> Canvas<'a> {
         }
         cx - x
     }
-
-    /// Текст по центру области шириной `w`.
-    pub fn text_centered(&mut self, x: i32, y: i32, w: i32, s: &str, c: Color) {
-        let tw = text_width(s);
-        self.text(x + (w - tw) / 2, y, s, c);
-    }
 }
 
-pub fn text_width(s: &str) -> i32 {
-    s.chars().count() as i32 * font::WIDTH as i32
+fn ceil(v: f32) -> i32 {
+    let t = v as i32;
+    if (t as f32) < v {
+        t + 1
+    } else {
+        t
+    }
 }
 
 /// Квадратный корень без SSE (метод Ньютона), достаточно точный для графики.
