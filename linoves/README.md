@@ -151,7 +151,7 @@ src/
   fs.rs          RAM-диск;  calc.rs — калькулятор;  shell.rs — оболочка
   selftest.rs    самотесты;  power.rs — перезагрузка/выключение
   sync.rs cpu.rs блокировки и инструкции процессора
-  desktop/       рабочий стол (механика; внешний вид — theme_data.rs из theme/desktop.png)
+  desktop/       рабочий стол: окна, меню, панель задач (значки Lucide, gfx/ui.rs)
   gfx/           видеорежим (Bochs VBE или GRUB), холст, шрифт с кириллицей
   mouse.rs       мышь PS/2;  pci.rs — поиск видеокарты;  rtc.rs — часы
 linker.ld        раскладка ядра в памяти (с адреса 1 МиБ)
