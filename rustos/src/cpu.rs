@@ -24,6 +24,20 @@ pub unsafe fn outl(port: u16, value: u32) {
     asm!("out dx, eax", in("dx") port, in("eax") value, options(nomem, nostack, preserves_flags));
 }
 
+#[inline]
+pub unsafe fn inw(port: u16) -> u16 {
+    let value: u16;
+    asm!("in ax, dx", out("ax") value, in("dx") port, options(nomem, nostack, preserves_flags));
+    value
+}
+
+#[inline]
+pub unsafe fn inl(port: u16) -> u32 {
+    let value: u32;
+    asm!("in eax, dx", out("eax") value, in("dx") port, options(nomem, nostack, preserves_flags));
+    value
+}
+
 /// Короткая пауза для медленных устройств (запись в неиспользуемый порт 0x80).
 #[inline]
 pub fn io_wait() {
@@ -129,4 +143,21 @@ pub fn rdtsc() -> u64 {
 #[inline]
 pub fn breakpoint() {
     unsafe { asm!("int3", options(nomem, nostack)) };
+}
+
+/// Название модели процессора (CPUID 0x80000002..4).
+pub fn brand_string() -> alloc::string::String {
+    let mut brand = [0u8; 48];
+    if cpuid(0x8000_0000, 0).eax >= 0x8000_0004 {
+        for (i, leaf) in (0x8000_0002u32..=0x8000_0004).enumerate() {
+            let r = cpuid(leaf, 0);
+            for (j, v) in [r.eax, r.ebx, r.ecx, r.edx].iter().enumerate() {
+                let o = i * 16 + j * 4;
+                brand[o..o + 4].copy_from_slice(&v.to_le_bytes());
+            }
+        }
+    }
+    let s = core::str::from_utf8(&brand).unwrap_or("");
+    let s = s.trim_matches(|c: char| c == '\0' || c == ' ');
+    alloc::string::String::from(if s.is_empty() { "unknown x86_64 CPU" } else { s })
 }

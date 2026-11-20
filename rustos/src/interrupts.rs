@@ -220,6 +220,7 @@ fn handle_irq(irq: u8) {
         pic::IRQ_TIMER => time::tick(),
         pic::IRQ_KEYBOARD => keyboard::irq(),
         pic::IRQ_COM1 => serial::irq(),
+        pic::IRQ_MOUSE => crate::mouse::irq(),
         _ => {}
     }
     pic::end_of_interrupt(irq);

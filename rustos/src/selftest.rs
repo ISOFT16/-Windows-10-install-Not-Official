@@ -164,6 +164,33 @@ fn test_calc() -> TestResult {
     ensure(calc::eval(&deep).is_err(), "deep nesting not limited")
 }
 
+fn test_gfx() -> TestResult {
+    use crate::gfx::{font, rgb, Canvas, Rect};
+    let mut buf = alloc::vec![0u32; 64 * 32];
+    {
+        let mut c = Canvas::new(&mut buf, 64, 32);
+        // рисование за границами не должно ничего ломать
+        c.fill_rect(-100, -100, 1000, 1000, rgb(1, 2, 3));
+        c.thick_line(-500, -500, 500, 500, 5, rgb(9, 9, 9));
+        c.fill_circle(1000, 1000, 50, 0);
+        let mut sub = c.sub(Rect::new(10, 10, 20, 10));
+        sub.fill(rgb(255, 0, 0));
+        sub.text(0, 0, "Привет, RustOS", rgb(0, 255, 0));
+    }
+    ensure(buf[63] == rgb(1, 2, 3), "fill_rect with clipping failed")?;
+    ensure(buf[10 * 64 + 30] != rgb(255, 0, 0), "sub-canvas drew outside its area")?;
+    ensure(buf[10 * 64 + 9] != rgb(255, 0, 0), "sub-canvas drew outside its area")?;
+    ensure(font::has_glyph('Ж') && font::has_glyph('A'), "font is missing glyphs")?;
+    ensure(font::glyph('\u{1F600}').len() == font::WIDTH * font::HEIGHT, "fallback glyph broken")
+}
+
+fn test_mouse_decoder() -> TestResult {
+    use crate::mouse::{decode, MouseEvent};
+    ensure(decode([0x09, 5, 3]) == Some(MouseEvent { dx: 5, dy: -3, buttons: 1 }), "plain packet")?;
+    ensure(decode([0x38, 0xFB, 0xFE]) == Some(MouseEvent { dx: -5, dy: 2, buttons: 0 }), "negative packet")?;
+    ensure(decode([0x48, 1, 1]).is_none(), "overflow packet must be dropped")
+}
+
 const TESTS: &[(&str, fn() -> TestResult)] = &[
     ("heap: Box, Vec, String", test_heap_basic),
     ("heap: alignment 1..4096", test_heap_alignment),
@@ -176,6 +203,8 @@ const TESTS: &[(&str, fn() -> TestResult)] = &[
     ("exceptions: int3 recovers", test_breakpoint),
     ("ramfs: write/append/read/rm, limits", test_fs),
     ("calc: precedence, overflow, depth", test_calc),
+    ("gfx: clipping, sub-canvas, Cyrillic font", test_gfx),
+    ("mouse: PS/2 packet decoder", test_mouse_decoder),
 ];
 
 /// Запустить все тесты. Возвращает `true`, если все прошли.

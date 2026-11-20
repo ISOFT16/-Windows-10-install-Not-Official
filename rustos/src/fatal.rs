@@ -9,7 +9,7 @@ use core::sync::atomic::{AtomicBool, Ordering};
 use crate::console::{Console, CONSOLE};
 use crate::interrupts::{InterruptFrame, EXCEPTION_NAMES};
 use crate::vga::Color;
-use crate::{boot, cpu, keyboard, power, selftest, serial};
+use crate::{boot, cpu, gfx, keyboard, power, selftest, serial};
 
 static IN_FATAL: AtomicBool = AtomicBool::new(false);
 
@@ -77,6 +77,11 @@ pub fn report(title: &str, body: impl FnOnce(&mut Console)) -> ! {
         let _ = writeln!(c, "  The kernel halted itself to protect your data from corruption.");
         let _ = writeln!(c, "  Press any key to restart the computer.");
         c.set_color(Color::White, Color::Red);
+        if c.is_gui() {
+            if let Some(fb) = gfx::info() {
+                gfx::draw_grid_direct(&fb, &c.grid);
+            }
+        }
     }
 
     if selftest::is_test_mode() {

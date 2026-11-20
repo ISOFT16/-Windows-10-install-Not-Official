@@ -17,16 +17,21 @@ mod console;
 mod boot;
 mod calc;
 mod cpu;
+mod desktop;
 mod fatal;
 mod fs;
 mod gdt;
+mod gfx;
 mod heap;
 mod input;
 mod interrupts;
 mod keyboard;
+mod mouse;
 mod multiboot;
+mod pci;
 mod pic;
 mod power;
+mod rtc;
 mod selftest;
 mod serial;
 mod shell;
@@ -41,7 +46,7 @@ use vga::Color;
 /// Версия системы (берётся из Cargo.toml): «1.0», «1.1», ...
 pub const VERSION: &str = concat!(env!("CARGO_PKG_VERSION_MAJOR"), ".", env!("CARGO_PKG_VERSION_MINOR"));
 /// Кодовое имя выпуска: C1, C2, C3, ... (увеличивается с каждым обновлением).
-pub const CODENAME: &str = "C1";
+pub const CODENAME: &str = "C2";
 
 fn ok(msg: core::fmt::Arguments) {
     cprint!(Color::LightGreen, "  [ OK ] ");
@@ -97,16 +102,29 @@ pub extern "C" fn kernel_main(magic: u32, mbi: u32) -> ! {
     interrupts::init();
     ok(format_args!("IDT loaded: all 256 vectors have handlers"));
 
-    let irqs = [pic::IRQ_TIMER, pic::IRQ_KEYBOARD, pic::IRQ_COM1];
-    let n = if serial::is_present() { 3 } else { 2 };
+    let has_mouse = mouse::init();
+    keyboard::init();
+    let mut irqs = [0u8; 4];
+    let mut n = 0;
+    for (irq, on) in [
+        (pic::IRQ_TIMER, true),
+        (pic::IRQ_KEYBOARD, true),
+        (pic::IRQ_COM1, serial::is_present()),
+        (pic::IRQ_MOUSE, has_mouse),
+    ] {
+        if on {
+            irqs[n] = irq;
+            n += 1;
+        }
+    }
     pic::init(&irqs[..n]);
     time::init();
-    keyboard::init();
     serial::enable_rx_interrupt();
     unsafe { cpu::enable_interrupts() };
     ok(format_args!(
-        "Interrupts on: timer {} Hz, PS/2 keyboard{}",
+        "Interrupts on: timer {} Hz, PS/2 keyboard{}{}",
         time::HZ,
+        if has_mouse { ", PS/2 mouse" } else { "" },
         if serial::is_present() { ", serial COM1" } else { "" }
     ));
 
@@ -125,6 +143,18 @@ pub extern "C" fn kernel_main(magic: u32, mbi: u32) -> ! {
     if multiboot::cmdline_has("selftest") {
         println!();
         selftest::run_and_exit();
+    }
+
+    if multiboot::cmdline_has("text") {
+        ok(format_args!("Text mode requested ('text' boot option)"));
+    } else {
+        match gfx::init() {
+            Some(fb) => {
+                ok(format_args!("Graphics {}x{}x{} ({}), starting the desktop", fb.width, fb.height, fb.bpp, fb.source));
+                desktop::run();
+            }
+            None => warn(format_args!("No graphics adapter found, staying in text mode")),
+        }
     }
 
     shell::run();

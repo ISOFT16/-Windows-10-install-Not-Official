@@ -15,7 +15,7 @@ pub fn init() {
     unsafe {
         outb(COM1 + 1, 0x00); // прерывания выкл.
         outb(COM1 + 3, 0x80); // DLAB
-        outb(COM1, 0x03); // делитель 3 -> 38400 бод
+        outb(COM1, 0x01); // делитель 1 -> 115200 бод
         outb(COM1 + 1, 0x00);
         outb(COM1 + 3, 0x03); // 8 бит, без чётности, 1 стоп-бит
         outb(COM1 + 2, 0xC7); // FIFO
@@ -150,6 +150,7 @@ impl Decoder {
             b'\t' => input::push(Key::Tab),
             0x03 => input::push(Key::CtrlC),
             0x0C => input::push(Key::CtrlL),
+            0x13 => input::push(Key::CtrlS),
             0x20..=0x7E => input::push(Key::Char(b as char)),
             _ => {}
         }

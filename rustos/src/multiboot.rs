@@ -30,8 +30,23 @@ impl MemRegion {
     }
 }
 
+/// Графический буфер, который настроил загрузчик (GRUB).
+#[derive(Clone, Copy, Debug)]
+pub struct Framebuffer {
+    pub addr: u64,
+    pub pitch: u32,
+    pub width: u32,
+    pub height: u32,
+    pub bpp: u8,
+    pub kind: u8,
+    pub red_pos: u8,
+    pub green_pos: u8,
+    pub blue_pos: u8,
+}
+
 pub struct BootInfo {
     pub valid: bool,
+    pub framebuffer: Option<Framebuffer>,
     pub mem_lower_kb: Option<u32>,
     pub mem_upper_kb: Option<u32>,
     regions: [MemRegion; MAX_REGIONS],
@@ -65,6 +80,7 @@ impl BootInfo {
 
 static INFO: IrqMutex<BootInfo> = IrqMutex::new(BootInfo {
     valid: false,
+    framebuffer: None,
     mem_lower_kb: None,
     mem_upper_kb: None,
     regions: [MemRegion { base: 0, len: 0, kind: 0 }; MAX_REGIONS],
@@ -141,6 +157,20 @@ pub fn parse(magic: u32, mbi: u32) -> bool {
                     off += size + 4;
                 }
             }
+        }
+        if flags & (1 << 12) != 0 && valid_ptr(mbi, 116) {
+            let b = |o: u64| *((mbi + o) as *const u8);
+            info.framebuffer = Some(Framebuffer {
+                addr: read_u64(mbi + 88),
+                pitch: read_u32(mbi + 96),
+                width: read_u32(mbi + 100),
+                height: read_u32(mbi + 104),
+                bpp: b(108),
+                kind: b(109),
+                red_pos: b(110),
+                green_pos: b(112),
+                blue_pos: b(114),
+            });
         }
         if flags & (1 << 9) != 0 {
             let addr = read_u32(mbi + 64) as u64;

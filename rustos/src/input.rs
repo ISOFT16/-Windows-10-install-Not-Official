@@ -24,6 +24,7 @@ pub enum Key {
     Escape,
     CtrlC,
     CtrlL,
+    CtrlS,
 }
 
 const CAPACITY: usize = 128;

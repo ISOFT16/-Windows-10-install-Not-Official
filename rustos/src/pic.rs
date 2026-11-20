@@ -14,6 +14,7 @@ pub const IRQ_TIMER: u8 = 0;
 pub const IRQ_KEYBOARD: u8 = 1;
 pub const IRQ_CASCADE: u8 = 2;
 pub const IRQ_COM1: u8 = 4;
+pub const IRQ_MOUSE: u8 = 12;
 
 /// Перенести IRQ 0..15 на векторы 32..47 (векторы 0..31 заняты исключениями)
 /// и замаскировать все линии, кроме нужных.

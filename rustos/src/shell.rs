@@ -36,6 +36,7 @@ const COMMANDS: &[(&str, &str)] = &[
     ("selftest", "run the kernel self-tests"),
     ("int3", "raise a breakpoint exception and recover from it"),
     ("crash", "crash <panic|null|stack|div0>: test the fatal error screen"),
+    ("desktop", "start the graphical desktop"),
     ("reboot", "restart the computer"),
     ("shutdown", "power off the computer"),
 ];
@@ -43,16 +44,21 @@ const COMMANDS: &[(&str, &str)] = &[
 pub struct Shell {
     history: VecDeque<String>,
     color: Color,
+    // состояние редактируемой строки
+    buf: Vec<char>,
+    cur: usize,
+    hist_pos: usize,
+    draft: String,
 }
 
+/// Текстовый режим: оболочка во весь экран.
 pub fn run() -> ! {
-    let mut shell = Shell { history: VecDeque::new(), color: Color::LightGray };
+    let mut shell = Shell::new();
     println!();
     println!("Type 'help' for a list of commands.");
+    shell.prompt();
     loop {
-        shell.prompt();
-        let line = shell.read_line();
-        shell.execute(line.trim());
+        shell.handle_key(input::read_key());
     }
 }
 
@@ -76,9 +82,24 @@ fn print_chars(chars: &[char]) {
 }
 
 impl Shell {
-    fn prompt(&self) {
+    pub fn new() -> Self {
+        Shell {
+            history: VecDeque::new(),
+            color: Color::LightGray,
+            buf: Vec::new(),
+            cur: 0,
+            hist_pos: 0,
+            draft: String::new(),
+        }
+    }
+
+    pub fn prompt(&mut self) {
         cprint!(Color::LightGreen, "{}", PROMPT);
         console::set_color(self.color);
+        self.buf.clear();
+        self.cur = 0;
+        self.hist_pos = self.history.len();
+        self.draft.clear();
     }
 
     /// Перерисовать хвост строки после изменения в середине.
@@ -90,25 +111,25 @@ impl Shell {
         backspaces(tail.len() + erased);
     }
 
-    fn replace_line(buf: &mut Vec<char>, cur: &mut usize, new: &str) {
-        backspaces(*cur);
-        let old_len = buf.len();
-        buf.clear();
-        buf.extend(new.chars().take(MAX_LINE));
-        print_chars(buf);
-        let extra = old_len.saturating_sub(buf.len());
+    fn replace_line(&mut self, new: &str) {
+        backspaces(self.cur);
+        let old_len = self.buf.len();
+        self.buf.clear();
+        self.buf.extend(new.chars().take(MAX_LINE));
+        print_chars(&self.buf);
+        let extra = old_len.saturating_sub(self.buf.len());
         for _ in 0..extra {
             print!(" ");
         }
         backspaces(extra);
-        *cur = buf.len();
+        self.cur = self.buf.len();
     }
 
-    fn complete(buf: &mut Vec<char>, cur: &mut usize) {
-        if *cur != buf.len() || buf.contains(&' ') {
+    fn complete(&mut self) {
+        if self.cur != self.buf.len() || self.buf.contains(&' ') {
             return;
         }
-        let prefix: String = buf.iter().collect();
+        let prefix: String = self.buf.iter().collect();
         let matches: Vec<&str> =
             COMMANDS.iter().map(|(n, _)| *n).filter(|n| n.starts_with(prefix.as_str())).collect();
         match matches.len() {
@@ -116,10 +137,10 @@ impl Shell {
             1 => {
                 let rest = &matches[0][prefix.len()..];
                 for c in rest.chars().chain(core::iter::once(' ')) {
-                    buf.push(c);
+                    self.buf.push(c);
                     print!("{}", c);
                 }
-                *cur = buf.len();
+                self.cur = self.buf.len();
             }
             _ => {
                 println!();
@@ -128,101 +149,99 @@ impl Shell {
                 }
                 println!();
                 cprint!(Color::LightGreen, "{}", PROMPT);
-                print_chars(buf);
+                print_chars(&self.buf);
             }
         }
     }
 
-    fn read_line(&mut self) -> String {
-        let mut buf: Vec<char> = Vec::new();
-        let mut cur = 0usize;
-        let mut hist_pos = self.history.len();
-        let mut draft = String::new();
-
-        loop {
-            match input::read_key() {
-                Key::Char(c) => {
-                    if buf.len() < MAX_LINE {
-                        buf.insert(cur, c);
-                        print!("{}", c);
-                        cur += 1;
-                        if cur < buf.len() {
-                            Self::redraw_tail(&buf[cur..], 0);
-                        }
+    /// Обработать одну клавишу (редактирование строки, Enter — выполнить).
+    pub fn handle_key(&mut self, key: Key) {
+        match key {
+            Key::Char(c) => {
+                if self.buf.len() < MAX_LINE {
+                    self.buf.insert(self.cur, c);
+                    print!("{}", c);
+                    self.cur += 1;
+                    if self.cur < self.buf.len() {
+                        Self::redraw_tail(&self.buf[self.cur..], 0);
                     }
                 }
-                Key::Backspace => {
-                    if cur > 0 {
-                        cur -= 1;
-                        buf.remove(cur);
-                        print!("\x08");
-                        Self::redraw_tail(&buf[cur..], 1);
-                    }
-                }
-                Key::Delete => {
-                    if cur < buf.len() {
-                        buf.remove(cur);
-                        Self::redraw_tail(&buf[cur..], 1);
-                    }
-                }
-                Key::Left => {
-                    if cur > 0 {
-                        cur -= 1;
-                        print!("\x08");
-                    }
-                }
-                Key::Right => {
-                    if cur < buf.len() {
-                        print!("{}", buf[cur]);
-                        cur += 1;
-                    }
-                }
-                Key::Home => {
-                    backspaces(cur);
-                    cur = 0;
-                }
-                Key::End => {
-                    print_chars(&buf[cur..]);
-                    cur = buf.len();
-                }
-                Key::Up => {
-                    if hist_pos > 0 {
-                        if hist_pos == self.history.len() {
-                            draft = buf.iter().collect();
-                        }
-                        hist_pos -= 1;
-                        let entry = self.history[hist_pos].clone();
-                        Self::replace_line(&mut buf, &mut cur, &entry);
-                    }
-                }
-                Key::Down => {
-                    if hist_pos < self.history.len() {
-                        hist_pos += 1;
-                        let entry = if hist_pos == self.history.len() {
-                            draft.clone()
-                        } else {
-                            self.history[hist_pos].clone()
-                        };
-                        Self::replace_line(&mut buf, &mut cur, &entry);
-                    }
-                }
-                Key::Tab => Self::complete(&mut buf, &mut cur),
-                Key::Enter => {
-                    println!();
-                    return buf.iter().collect();
-                }
-                Key::CtrlC => {
-                    println!("^C");
-                    return String::new();
-                }
-                Key::CtrlL => {
-                    console::clear();
-                    self.prompt();
-                    print_chars(&buf);
-                    cur = buf.len();
-                }
-                Key::Escape | Key::PageUp | Key::PageDown => {}
             }
+            Key::Backspace => {
+                if self.cur > 0 {
+                    self.cur -= 1;
+                    self.buf.remove(self.cur);
+                    print!("\x08");
+                    Self::redraw_tail(&self.buf[self.cur..], 1);
+                }
+            }
+            Key::Delete => {
+                if self.cur < self.buf.len() {
+                    self.buf.remove(self.cur);
+                    Self::redraw_tail(&self.buf[self.cur..], 1);
+                }
+            }
+            Key::Left => {
+                if self.cur > 0 {
+                    self.cur -= 1;
+                    print!("\x08");
+                }
+            }
+            Key::Right => {
+                if self.cur < self.buf.len() {
+                    print!("{}", self.buf[self.cur]);
+                    self.cur += 1;
+                }
+            }
+            Key::Home => {
+                backspaces(self.cur);
+                self.cur = 0;
+            }
+            Key::End => {
+                print_chars(&self.buf[self.cur..]);
+                self.cur = self.buf.len();
+            }
+            Key::Up => {
+                if self.hist_pos > 0 {
+                    if self.hist_pos == self.history.len() {
+                        self.draft = self.buf.iter().collect();
+                    }
+                    self.hist_pos -= 1;
+                    let entry = self.history[self.hist_pos].clone();
+                    self.replace_line(&entry);
+                }
+            }
+            Key::Down => {
+                if self.hist_pos < self.history.len() {
+                    self.hist_pos += 1;
+                    let entry = if self.hist_pos == self.history.len() {
+                        self.draft.clone()
+                    } else {
+                        self.history[self.hist_pos].clone()
+                    };
+                    self.replace_line(&entry);
+                }
+            }
+            Key::Tab => self.complete(),
+            Key::Enter => {
+                println!();
+                let line: String = self.buf.iter().collect();
+                self.execute(line.trim());
+                self.prompt();
+            }
+            Key::CtrlC => {
+                println!("^C");
+                self.prompt();
+            }
+            Key::CtrlL => {
+                console::clear();
+                let saved = core::mem::take(&mut self.buf);
+                self.prompt();
+                self.buf = saved;
+                print_chars(&self.buf);
+                self.cur = self.buf.len();
+            }
+            Key::Escape | Key::PageUp | Key::PageDown | Key::CtrlS => {}
         }
     }
 
@@ -276,6 +295,15 @@ impl Shell {
                 );
             }
             "crash" => cmd_crash(args),
+            "desktop" | "gui" | "startx" => {
+                if crate::desktop::is_running() {
+                    println!("The desktop is already running.");
+                } else if crate::gfx::init().is_some() {
+                    crate::desktop::run();
+                } else {
+                    cprintln!(Color::LightRed, "No graphics adapter found (Bochs VBE or GRUB framebuffer).");
+                }
+            }
             "reboot" | "restart" => {
                 println!("Rebooting...");
                 power::reboot();
@@ -403,19 +431,7 @@ fn cmd_cpu() {
     vendor[8..12].copy_from_slice(&r.ecx.to_le_bytes());
     println!("Vendor   : {}", core::str::from_utf8(&vendor).unwrap_or("?"));
 
-    let max_ext = cpu::cpuid(0x8000_0000, 0).eax;
-    if max_ext >= 0x8000_0004 {
-        let mut brand = [0u8; 48];
-        for (i, leaf) in (0x8000_0002u32..=0x8000_0004).enumerate() {
-            let r = cpu::cpuid(leaf, 0);
-            for (j, v) in [r.eax, r.ebx, r.ecx, r.edx].iter().enumerate() {
-                let o = i * 16 + j * 4;
-                brand[o..o + 4].copy_from_slice(&v.to_le_bytes());
-            }
-        }
-        let s = core::str::from_utf8(&brand).unwrap_or("?");
-        println!("Model    : {}", s.trim_matches(|c: char| c == '\0' || c == ' '));
-    }
+    println!("Model    : {}", cpu::brand_string());
 
     let f = cpu::cpuid(1, 0);
     let ext = cpu::cpuid(0x8000_0001, 0);

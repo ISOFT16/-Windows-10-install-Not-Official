@@ -1,4 +1,6 @@
-//! Консоль: всё выводится одновременно на экран (VGA) и в COM1.
+//! Консоль: вывод одновременно на экран VGA (в текстовом режиме), в COM1 и
+//! в текстовую сетку 80x25
+//! (её показывает аварийный экран в графическом режиме).
 
 use core::fmt;
 
@@ -6,16 +8,94 @@ use crate::serial;
 use crate::sync::IrqMutex;
 use crate::vga::{Color, Writer};
 
+pub const GRID_COLS: usize = 80;
+pub const GRID_ROWS: usize = 25;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct Cell {
+    pub ch: char,
+    /// Цвета как в VGA: младшие 4 бита — текст, старшие — фон.
+    pub attr: u8,
+}
+
+const BLANK: Cell = Cell { ch: ' ', attr: 0x07 };
+
+/// Текстовая сетка с той же логикой, что и экран VGA.
+pub struct TextGrid {
+    pub cells: [Cell; GRID_COLS * GRID_ROWS],
+    pub col: usize,
+    pub row: usize,
+    attr: u8,
+}
+
+impl TextGrid {
+    const fn new() -> Self {
+        TextGrid { cells: [BLANK; GRID_COLS * GRID_ROWS], col: 0, row: 0, attr: 0x07 }
+    }
+
+    fn clear(&mut self) {
+        let blank = Cell { ch: ' ', attr: self.attr };
+        self.cells.fill(blank);
+        self.col = 0;
+        self.row = 0;
+    }
+
+    fn newline(&mut self) {
+        self.col = 0;
+        if self.row + 1 < GRID_ROWS {
+            self.row += 1;
+        } else {
+            self.cells.copy_within(GRID_COLS.., 0);
+            let blank = Cell { ch: ' ', attr: self.attr };
+            self.cells[(GRID_ROWS - 1) * GRID_COLS..].fill(blank);
+        }
+    }
+
+    pub fn put_char(&mut self, c: char) {
+        match c {
+            '\n' => self.newline(),
+            '\r' => self.col = 0,
+            '\u{8}' => {
+                if self.col > 0 {
+                    self.col -= 1;
+                } else if self.row > 0 {
+                    self.row -= 1;
+                    self.col = GRID_COLS - 1;
+                }
+            }
+            '\t' => {
+                let n = 4 - (self.col % 4);
+                for _ in 0..n {
+                    self.put_char(' ');
+                }
+            }
+            c if (c as u32) < 0x20 => {}
+            c => {
+                if self.col >= GRID_COLS {
+                    self.newline();
+                }
+                self.cells[self.row * GRID_COLS + self.col] = Cell { ch: c, attr: self.attr };
+                self.col += 1;
+            }
+        }
+    }
+}
+
 pub struct Console {
     vga: Writer,
+    pub grid: TextGrid,
     fg: Color,
     bg: Color,
+    /// Графический режим: экран VGA не используется.
+    gui: bool,
 }
 
 pub static CONSOLE: IrqMutex<Console> = IrqMutex::new(Console {
     vga: Writer::new(),
+    grid: TextGrid::new(),
     fg: Color::LightGray,
     bg: Color::Black,
+    gui: false,
 });
 
 /// Цвет ANSI для терминала на последовательном порту.
@@ -26,6 +106,7 @@ impl Console {
         self.fg = fg;
         self.bg = bg;
         self.vga.set_color(fg, bg);
+        self.grid.attr = ((bg as u8) << 4) | fg as u8;
         let mut buf = [0u8; 16];
         let s = ansi_sequence(&mut buf, ANSI[fg as usize], ANSI[bg as usize] + 10);
         serial::write_str(s);
@@ -36,8 +117,15 @@ impl Console {
     }
 
     pub fn clear(&mut self) {
-        self.vga.clear();
+        if !self.gui {
+            self.vga.clear();
+        }
+        self.grid.clear();
         serial::write_str("\x1b[2J\x1b[H");
+    }
+
+    pub fn is_gui(&self) -> bool {
+        self.gui
     }
 }
 
@@ -67,9 +155,14 @@ impl fmt::Write for Console {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for c in s.chars() {
             serial::write_char(c);
-            self.vga.put_char(c);
+            self.grid.put_char(c);
+            if !self.gui {
+                self.vga.put_char(c);
+            }
         }
-        self.vga.update_cursor();
+        if !self.gui {
+            self.vga.update_cursor();
+        }
         Ok(())
     }
 }
@@ -79,6 +172,11 @@ pub fn init() {
     c.vga.enable_cursor();
     c.set_color(Color::LightGray, Color::Black);
     c.clear();
+}
+
+/// Переключить консоль в графический режим (экран VGA больше не трогаем).
+pub fn set_gui(on: bool) {
+    CONSOLE.lock().gui = on;
 }
 
 #[doc(hidden)]

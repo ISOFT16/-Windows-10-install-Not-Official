@@ -45,10 +45,19 @@ pub fn init() {
 
 /// Обработчик IRQ1.
 pub fn irq() {
-    if unsafe { inb(STATUS) } & 1 == 0 {
+    let status = unsafe { inb(STATUS) };
+    if status & 1 == 0 {
         return;
     }
-    let sc = unsafe { inb(DATA) };
+    let b = unsafe { inb(DATA) };
+    if status & 0x20 != 0 {
+        crate::mouse::handle_byte(b); // байт пришёл от мыши
+    } else {
+        handle_scancode(b);
+    }
+}
+
+pub fn handle_scancode(sc: u8) {
     let mut st = STATE.lock();
 
     if st.skip > 0 {
@@ -147,6 +156,7 @@ pub fn irq() {
                     match base {
                         b'c' => Some(Key::CtrlC),
                         b'l' => Some(Key::CtrlL),
+                        b's' => Some(Key::CtrlS),
                         _ => None,
                     }
                 } else {
