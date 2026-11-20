@@ -1,4 +1,4 @@
-name: RustOS
+name: Linoves
 
 permissions:
   contents: write
@@ -6,12 +6,12 @@ permissions:
 on:
   push:
     paths:
-      - "rustos/**"
-      - ".github/workflows/rustos.yml"
+      - "linoves/**"
+      - ".github/workflows/linoves.yml"
   pull_request:
     paths:
-      - "rustos/**"
-      - ".github/workflows/rustos.yml"
+      - "linoves/**"
+      - ".github/workflows/linoves.yml"
   workflow_dispatch:
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: rustos
+        working-directory: linoves
     steps:
       - uses: actions/checkout@v4
 
@@ -45,10 +45,10 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: rustos
+          name: linoves
           path: |
-            rustos/dist/RustOS.iso
-            rustos/target/x86_64-unknown-none/release/rustos
+            linoves/dist/Linoves.iso
+            linoves/target/x86_64-unknown-none/release/linoves
 
       - name: Read version
         id: ver
@@ -61,13 +61,13 @@ jobs:
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: rustos-${{ steps.ver.outputs.version }}-${{ steps.ver.outputs.codename }}-build${{ github.run_number }}
-          name: RustOS ${{ steps.ver.outputs.version }} (${{ steps.ver.outputs.codename }}), сборка ${{ github.run_number }}
+          tag_name: linoves-${{ steps.ver.outputs.version }}-${{ steps.ver.outputs.codename }}-build${{ github.run_number }}
+          name: Linoves ${{ steps.ver.outputs.version }} (${{ steps.ver.outputs.codename }}), сборка ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           make_latest: false
           body: |
-            **RustOS.iso** — загрузочный образ. Запуск:
-            * QEMU: `qemu-system-x86_64 -m 128M -cdrom RustOS.iso`
+            **Linoves.iso** — загрузочный образ. Запуск:
+            * QEMU: `qemu-system-x86_64 -m 128M -cdrom Linoves.iso`
             * VirtualBox: новая машина «Other / Other (64-bit)», 128 МБ памяти, подключить ISO как CD.
             * Флешка: записать Rufus в режиме DD; в BIOS включить Legacy/CSM.
-          files: rustos/dist/RustOS.iso
+          files: linoves/dist/Linoves.iso

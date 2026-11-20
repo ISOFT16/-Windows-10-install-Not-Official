@@ -194,7 +194,7 @@ boot_gdt_ptr:
     .long boot_gdt
     .long 0
 boot_err_msg:
-    .asciz "RustOS: ERROR - this CPU does not support 64-bit (x86_64) mode. System halted."
+    .asciz "Linoves: ERROR - this CPU does not support 64-bit (x86_64) mode. System halted."
 
     .section .bss.boot, "aw", @nobits
     .balign 4096

@@ -1,4 +1,4 @@
 target/
 *.iso
-!dist/RustOS.iso
+!dist/Linoves.iso
 isodir/

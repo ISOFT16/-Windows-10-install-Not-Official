@@ -1,4 +1,4 @@
-/* RustOS linker script: everything lives in one loadable segment at 1 MiB,
+/* Linoves linker script: everything lives in one loadable segment at 1 MiB,
    so the Multiboot "a.out kludge" header can describe the image exactly. */
 ENTRY(_start)
 

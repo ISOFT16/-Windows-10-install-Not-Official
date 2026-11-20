@@ -121,13 +121,13 @@ pub fn usage() -> (usize, usize) {
 pub fn init() {
     let _ = write(
         "readme.txt",
-        "Welcome to RustOS!\n\
+        "Welcome to Linoves!\n\
          This is a RAM disk: files live in memory until the computer is restarted.\n\
          Try: ls, cat readme.txt, write note.txt hello, append note.txt world, rm note.txt\n",
     );
     let _ = write(
         "about.txt",
-        "RustOS is a small 64-bit kernel written in Rust.\n\
+        "Linoves is a small 64-bit kernel written in Rust.\n\
          Every CPU exception has a handler, the kernel stack has a guard page,\n\
          double faults run on their own stack and the heap checks every free().\n",
     );

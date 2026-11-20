@@ -59,7 +59,7 @@ pub fn exception(frame: &InterruptFrame) -> ! {
 pub fn report(title: &str, body: impl FnOnce(&mut Console)) -> ! {
     cpu::disable_interrupts();
     if IN_FATAL.swap(true, Ordering::SeqCst) {
-        serial::write_str("\n*** RustOS: nested fatal error, system halted ***\n");
+        serial::write_str("\n*** Linoves: nested fatal error, system halted ***\n");
         cpu::halt_forever();
     }
 
@@ -70,7 +70,7 @@ pub fn report(title: &str, body: impl FnOnce(&mut Console)) -> ! {
         c.set_color(Color::White, Color::Red);
         c.clear();
         let _ = writeln!(c);
-        let _ = writeln!(c, "  RustOS has stopped: {}", title);
+        let _ = writeln!(c, "  Linoves has stopped: {}", title);
         let _ = writeln!(c, "  ----------------------------------------------------------------------");
         body(&mut c);
         let _ = writeln!(c);

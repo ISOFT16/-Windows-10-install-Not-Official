@@ -12,7 +12,7 @@ use crate::{
 
 const MAX_LINE: usize = 200;
 const MAX_HISTORY: usize = 50;
-const PROMPT: &str = "rustos> ";
+const PROMPT: &str = "linoves> ";
 
 const COMMANDS: &[(&str, &str)] = &[
     ("help", "show this list"),
@@ -262,7 +262,7 @@ impl Shell {
             "clear" | "cls" => console::clear(),
             "echo" => println!("{}", args),
             "about" => cmd_about(),
-            "version" | "ver" => println!("RustOS {} ({})", crate::VERSION, crate::CODENAME),
+            "version" | "ver" => println!("Linoves {} ({})", crate::VERSION, crate::CODENAME),
             "uptime" => cmd_uptime(),
             "mem" | "free" => cmd_mem(),
             "memmap" => cmd_memmap(),
@@ -355,7 +355,7 @@ fn fmt_kib(bytes: u64) -> (u64, &'static str) {
 }
 
 fn cmd_about() {
-    cprintln!(Color::LightCyan, "RustOS {} ({}) x86_64", crate::VERSION, crate::CODENAME);
+    cprintln!(Color::LightCyan, "Linoves {} ({}) x86_64", crate::VERSION, crate::CODENAME);
     println!("  Build      : {}", if cfg!(debug_assertions) { "debug" } else { "release" });
     multiboot::with(|i| {
         let loader = if i.loader_name().is_empty() { "unknown" } else { i.loader_name() };

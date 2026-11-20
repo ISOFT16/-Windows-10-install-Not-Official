@@ -1,13 +1,15 @@
-# RustOS
+# Linoves
 
-**RustOS** — настоящая 64-битная операционная система (ядро) для x86_64, написанная на Rust.
+*(до версии 1.2 (C3) система называлась RustOS)*
+
+**Linoves** — настоящая 64-битная операционная система (ядро) для x86_64, написанная на Rust.
 Она запускается прямо на «железе» или в QEMU, без Linux и без Windows под ней.
 
 - никаких внешних библиотек (crates): только стабильный Rust и встроенный ассемблер;
 - nightly-версия Rust **не нужна**, `bootimage` и прочие утилиты тоже;
 - запуск одной командой: `cargo run`.
 
-![Рабочий стол RustOS](docs/desktop.png)
+![Рабочий стол Linoves](docs/desktop.png)
 
 ## Рабочий стол
 
@@ -44,13 +46,13 @@ cargo run --release
 
 ## Готовый ISO-образ (самый простой способ)
 
-Файл **[`dist/RustOS.iso`](dist/RustOS.iso)** уже собран, ничего компилировать не нужно.
+Файл **[`dist/Linoves.iso`](dist/Linoves.iso)** уже собран, ничего компилировать не нужно.
 
 * **QEMU (Windows):** двойной щелчок по `dist/run.bat`, или в терминале:
-  `qemu-system-x86_64 -m 128M -cdrom RustOS.iso`
+  `qemu-system-x86_64 -m 128M -cdrom Linoves.iso`
 * **QEMU (Linux/macOS):** `./dist/run.sh`
 * **VirtualBox:** «Создать» → тип *Other*, версия *Other/Unknown (64-bit)*, память 128 МБ,
-  без жёсткого диска → в настройках «Носители» подключить `RustOS.iso` как оптический диск → «Запустить».
+  без жёсткого диска → в настройках «Носители» подключить `Linoves.iso` как оптический диск → «Запустить».
 * **Реальный компьютер:** записать ISO на флешку программой Rufus (режим **DD**) или `dd`,
   в BIOS включить загрузку Legacy/CSM и загрузиться с флешки.
 
@@ -62,7 +64,7 @@ cargo run --release
 Нужны: Rust (через [rustup](https://rustup.rs)) и QEMU (`qemu-system-x86_64` должен быть в `PATH`).
 
 ```bash
-cd rustos
+cd linoves
 cargo run --release
 ```
 
@@ -126,16 +128,16 @@ powershell -ExecutionPolicy Bypass -File scripts\selftest.ps1   # Windows
 Ядро загружается с параметром `selftest`, проверяет кучу (2000 случайных выделений,
 выравнивание, утечки, целостность списка), таймер, обработку исключений, RAM-диск
 и калькулятор, после чего QEMU завершается с кодом результата. Эти же тесты
-автоматически запускаются на GitHub при каждом изменении папки `rustos/`.
+автоматически запускаются на GitHub при каждом изменении папки `linoves/`.
 
 ## Запуск на реальном компьютере или в VirtualBox
 
 ```bash
 sudo apt install grub-pc-bin grub-common xorriso mtools   # один раз
-./scripts/make-iso.sh                                     # получится dist/RustOS.iso
+./scripts/make-iso.sh                                     # получится dist/Linoves.iso
 ```
 
-`RustOS.iso` можно подключить в VirtualBox/VMware как CD или записать на флешку
+`Linoves.iso` можно подключить в VirtualBox/VMware как CD или записать на флешку
 (например, `dd` или Rufus в режиме DD). Компьютер должен загружаться в режиме
 **BIOS / Legacy (CSM)**: в чистом UEFI нет текстового режима VGA.
 

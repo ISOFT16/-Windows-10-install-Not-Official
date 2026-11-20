@@ -1,8 +1,8 @@
 [package]
-name = "rustos"
-version = "1.1.0"
+name = "linoves"
+version = "1.2.0"
 edition = "2021"
-description = "RustOS: a small, defensive x86_64 kernel written in Rust"
+description = "Linoves: a small, defensive x86_64 kernel written in Rust"
 build = "build.rs"
 
 [features]

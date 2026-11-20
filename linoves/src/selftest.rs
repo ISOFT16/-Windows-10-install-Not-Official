@@ -175,7 +175,7 @@ fn test_gfx() -> TestResult {
         c.fill_circle(1000, 1000, 50, 0);
         let mut sub = c.sub(Rect::new(10, 10, 20, 10));
         sub.fill(rgb(255, 0, 0));
-        sub.text(0, 0, "Привет, RustOS", rgb(0, 255, 0));
+        sub.text(0, 0, "Привет, Linoves", rgb(0, 255, 0));
     }
     ensure(buf[63] == rgb(1, 2, 3), "fill_rect with clipping failed")?;
     ensure(buf[10 * 64 + 30] != rgb(255, 0, 0), "sub-canvas drew outside its area")?;
@@ -236,7 +236,7 @@ pub fn run() -> bool {
 pub fn run_and_exit() {
     TEST_MODE.store(true, Ordering::Relaxed);
     let ok = run();
-    println!("RUSTOS_SELFTEST: {}", if ok { "PASS" } else { "FAIL" });
+    println!("LINOVES_SELFTEST: {}", if ok { "PASS" } else { "FAIL" });
     power::qemu_exit(ok);
     // Без устройства isa-debug-exit просто продолжаем работу в оболочке.
     TEST_MODE.store(false, Ordering::Relaxed);

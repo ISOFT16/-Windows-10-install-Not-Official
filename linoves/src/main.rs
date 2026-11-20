@@ -1,4 +1,4 @@
-//! RustOS — небольшое 64-битное ядро на Rust.
+//! Linoves — небольшое 64-битное ядро на Rust.
 //!
 //! Порядок загрузки:
 //! 1. `boot.rs`: загрузчик (QEMU/GRUB, Multiboot) передаёт управление в
@@ -46,7 +46,7 @@ use vga::Color;
 /// Версия системы (берётся из Cargo.toml): «1.0», «1.1», ...
 pub const VERSION: &str = concat!(env!("CARGO_PKG_VERSION_MAJOR"), ".", env!("CARGO_PKG_VERSION_MINOR"));
 /// Кодовое имя выпуска: C1, C2, C3, ... (увеличивается с каждым обновлением).
-pub const CODENAME: &str = "C2";
+pub const CODENAME: &str = "C3";
 
 fn ok(msg: core::fmt::Arguments) {
     cprint!(Color::LightGreen, "  [ OK ] ");
@@ -73,14 +73,14 @@ impl core::fmt::Write for Buf<'_> {
 }
 
 fn banner() {
-    cprintln!(Color::LightCyan, "  ╔════════════════════════════════════════════════════╗");
-    let mut title = [0u8; 52];
+    cprintln!(Color::LightCyan, "  ╔════════════════════════════════════════════════════════╗");
+    let mut title = [0u8; 56];
     let mut w = Buf { buf: &mut title, len: 0 };
-    let _ = core::fmt::Write::write_fmt(&mut w, format_args!("   RustOS {} ({})  -  64-bit kernel written in Rust", VERSION, CODENAME));
+    let _ = core::fmt::Write::write_fmt(&mut w, format_args!("   Linoves {} ({})  -  64-bit kernel written in Rust", VERSION, CODENAME));
     let len = w.len;
-    let text = core::str::from_utf8(&title[..len]).unwrap_or("RustOS");
-    cprintln!(Color::LightCyan, "  ║{:<52}║", text);
-    cprintln!(Color::LightCyan, "  ╚════════════════════════════════════════════════════╝");
+    let text = core::str::from_utf8(&title[..len]).unwrap_or("Linoves");
+    cprintln!(Color::LightCyan, "  ║{:<56}║", text);
+    cprintln!(Color::LightCyan, "  ╚════════════════════════════════════════════════════════╝");
     println!();
 }
 
