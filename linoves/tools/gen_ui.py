@@ -18,7 +18,7 @@ FONTS = [  # имя, файл, размер в пикселях
     ("BOLD", "DejaVuSans-Bold.ttf", 13),
     ("LARGE", "DejaVuSans-Bold.ttf", 20),
 ]
-CHARS = [chr(c) for c in range(0x20, 0x7F)] + [chr(c) for c in range(0x410, 0x450)] + list("Ёё·—«»№°…×")
+CHARS = [chr(c) for c in range(0x20, 0x7F)] + [chr(c) for c in range(0x410, 0x450)] + list("Ёё·—«»№°…×←→")
 
 out = ["// Сгенерировано tools/gen_ui.py. Не редактировать вручную.",
        "// Значки: Lucide (ISC License, theme/lucide/LICENSE).",

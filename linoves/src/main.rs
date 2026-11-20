@@ -46,7 +46,7 @@ use vga::Color;
 /// Версия системы (берётся из Cargo.toml): «1.0», «1.1», ...
 pub const VERSION: &str = concat!(env!("CARGO_PKG_VERSION_MAJOR"), ".", env!("CARGO_PKG_VERSION_MINOR"));
 /// Кодовое имя выпуска: C1, C2, C3, ... (увеличивается с каждым обновлением).
-pub const CODENAME: &str = "C4";
+pub const CODENAME: &str = "C5";
 
 fn ok(msg: core::fmt::Arguments) {
     cprint!(Color::LightGreen, "  [ OK ] ");

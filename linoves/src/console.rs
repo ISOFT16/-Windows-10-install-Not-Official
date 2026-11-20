@@ -3,6 +3,7 @@
 //! (её показывает аварийный экран в графическом режиме).
 
 use core::fmt;
+use core::sync::atomic::{AtomicU64, Ordering};
 
 use crate::serial;
 use crate::sync::IrqMutex;
@@ -98,6 +99,9 @@ pub static CONSOLE: IrqMutex<Console> = IrqMutex::new(Console {
     gui: false,
 });
 
+/// Увеличивается при каждом изменении сетки (окно «Терминал» знает, когда перерисоваться).
+static GENERATION: AtomicU64 = AtomicU64::new(0);
+
 /// Цвет ANSI для терминала на последовательном порту.
 const ANSI: [u8; 16] = [30, 34, 32, 36, 31, 35, 33, 37, 90, 94, 92, 96, 91, 95, 93, 97];
 
@@ -121,6 +125,7 @@ impl Console {
             self.vga.clear();
         }
         self.grid.clear();
+        GENERATION.fetch_add(1, Ordering::Relaxed);
         serial::write_str("\x1b[2J\x1b[H");
     }
 
@@ -163,6 +168,7 @@ impl fmt::Write for Console {
         if !self.gui {
             self.vga.update_cursor();
         }
+        GENERATION.fetch_add(1, Ordering::Relaxed);
         Ok(())
     }
 }
@@ -177,6 +183,18 @@ pub fn init() {
 /// Переключить консоль в графический режим (экран VGA больше не трогаем).
 pub fn set_gui(on: bool) {
     CONSOLE.lock().gui = on;
+}
+
+pub fn generation() -> u64 {
+    GENERATION.load(Ordering::Relaxed)
+}
+
+/// Скопировать сетку и позицию курсора (для отрисовки без удержания блокировки).
+pub fn copy_grid(out: &mut [Cell]) -> (usize, usize) {
+    let c = CONSOLE.lock();
+    let n = out.len().min(c.grid.cells.len());
+    out[..n].copy_from_slice(&c.grid.cells[..n]);
+    (c.grid.col.min(GRID_COLS - 1), c.grid.row)
 }
 
 #[doc(hidden)]

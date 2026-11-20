@@ -119,16 +119,65 @@ pub fn usage() -> (usize, usize) {
 }
 
 pub fn init() {
-    let _ = write(
-        "readme.txt",
-        "Welcome to Linoves!\n\
-         This is a RAM disk: files live in memory until the computer is restarted.\n\
-         Try: ls, cat readme.txt, write note.txt hello, append note.txt world, rm note.txt\n",
-    );
-    let _ = write(
-        "about.txt",
-        "Linoves is a small 64-bit kernel written in Rust.\n\
-         Every CPU exception has a handler, the kernel stack has a guard page,\n\
-         double faults run on their own stack and the heap checks every free().\n",
-    );
+    const FILES: [(&str, &str); 9] = [
+        (
+            "readme.txt",
+            "Добро пожаловать в Linoves!\n\n\
+             Это RAM-диск: файлы хранятся в памяти до перезагрузки.\n\
+             Откройте файл двойным щелчком в программе «Файлы»,\n\
+             измените его в Блокноте и сохраните (Ctrl+S).\n",
+        ),
+        (
+            "about.txt",
+            "Linoves — 64-битная операционная система, написанная на Rust.\n\
+             У каждого исключения процессора есть обработчик, у стека ядра есть\n\
+             защитная страница, а куча проверяет каждое освобождение памяти.\n",
+        ),
+        (
+            "keys.txt",
+            "Полезные клавиши\n\n\
+             Alt+Shift      — переключить раскладку (RU / EN)\n\
+             Ctrl+S         — сохранить файл в Блокноте\n\
+             Esc            — закрыть меню\n\
+             Ctrl+Alt+Del   — перезагрузка\n\
+             Стрелки        — управление змейкой\n",
+        ),
+        (
+            "todo.txt",
+            "Список дел\n\n\
+             [x] Рабочий стол\n\
+             [x] Окна и анимации\n\
+             [x] Блокнот, калькулятор, рисование\n\
+             [ ] Сеть (проводная)\n\
+             [ ] Простой браузер\n\
+             [ ] Работа с флешкой\n",
+        ),
+        (
+            "notes.txt",
+            "Заметки\n\nЗдесь можно писать что угодно. Не забудьте сохранить!\n",
+        ),
+        (
+            "shopping.txt",
+            "Покупки\n\n- хлеб\n- молоко\n- яблоки\n- новая мышка\n",
+        ),
+        (
+            "poem.txt",
+            "Тихо гудит процессор,\nбьются в памяти байты,\nокна встают над столом —\nсистема проснулась.\n",
+        ),
+        (
+            "hello.rs",
+            "fn main() {\n    println!(\"Привет из Linoves!\");\n}\n",
+        ),
+        (
+            "changelog.txt",
+            "Linoves 1.4 (C5)\n\n\
+             - новые приложения: Терминал, Блокнот, Калькулятор, Рисование,\n\
+               Монитор системы, Настройки, Змейка\n\
+             - анимации окон и меню\n\
+             - русская раскладка клавиатуры\n",
+        ),
+    ];
+    for (name, text) in FILES.iter() {
+        let _ = write(name, text);
+    }
 }

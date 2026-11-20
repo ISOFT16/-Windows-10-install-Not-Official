@@ -13,6 +13,32 @@ const NORMAL: [u8; 58] =
 const SHIFTED: [u8; 58] =
     *b"\0\x1b!@#$%^&*()_+\x08\tQWERTYUIOP{}\n\0ASDFGHJKL:\"~\0|ZXCVBNM<>?\0*\0 ";
 
+/// Русская раскладка ЙЦУКЕН для тех же скан-кодов (0 — клавиша не меняется).
+const RU_NORMAL: [char; 58] = [
+    '\0', '\0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\0', '\0',
+    'й', 'ц', 'у', 'к', 'е', 'н', 'г', 'ш', 'щ', 'з', 'х', 'ъ', '\0', '\0',
+    'ф', 'ы', 'в', 'а', 'п', 'р', 'о', 'л', 'д', 'ж', 'э', 'ё', '\0', '\\',
+    'я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю', '.', '\0', '*', '\0', ' ',
+];
+const RU_SHIFTED: [char; 58] = [
+    '\0', '\0', '!', '"', '№', ';', '%', ':', '?', '*', '(', ')', '_', '+', '\0', '\0',
+    'Й', 'Ц', 'У', 'К', 'Е', 'Н', 'Г', 'Ш', 'Щ', 'З', 'Х', 'Ъ', '\0', '\0',
+    'Ф', 'Ы', 'В', 'А', 'П', 'Р', 'О', 'Л', 'Д', 'Ж', 'Э', 'Ё', '\0', '/',
+    'Я', 'Ч', 'С', 'М', 'И', 'Т', 'Ь', 'Б', 'Ю', ',', '\0', '*', '\0', ' ',
+];
+
+static RUSSIAN: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+/// Включена ли русская раскладка (переключение Alt+Shift).
+pub fn is_russian() -> bool {
+    RUSSIAN.load(core::sync::atomic::Ordering::Relaxed)
+}
+
+/// Переключить раскладку (кнопка RU/EN на панели задач).
+pub fn toggle_layout() {
+    RUSSIAN.store(!is_russian(), core::sync::atomic::Ordering::Relaxed);
+}
+
 struct State {
     extended: bool,
     skip: u8,
@@ -116,6 +142,11 @@ pub fn handle_scancode(sc: u8) {
         return;
     }
 
+    let toggle = !released
+        && ((matches!(code, 0x2A | 0x36) && st.alt) || (code == 0x38 && (st.lshift || st.rshift)));
+    if toggle {
+        RUSSIAN.store(!is_russian(), core::sync::atomic::Ordering::Relaxed);
+    }
     let key = match code {
         0x2A => {
             st.lshift = !released;
@@ -159,6 +190,10 @@ pub fn handle_scancode(sc: u8) {
                         b's' => Some(Key::CtrlS),
                         _ => None,
                     }
+                } else if is_russian() && RU_NORMAL[c as usize] != '\0' {
+                    let ru = RU_NORMAL[c as usize];
+                    let upper = if ru.is_alphabetic() { shift ^ st.caps } else { shift };
+                    Some(Key::Char(if upper { RU_SHIFTED[c as usize] } else { ru }))
                 } else {
                     let upper = if letter { shift ^ st.caps } else { shift };
                     let ch = if upper { SHIFTED[c as usize] } else { base };
