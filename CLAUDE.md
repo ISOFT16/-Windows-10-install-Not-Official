@@ -11,7 +11,7 @@
   1. `linoves/Cargo.toml`: поле `version` (например, `1.1.0`).
   2. `linoves/src/main.rs`: константа `CODENAME` (например, `"C2"`).
   3. `linoves/CHANGELOG.md`: новый раздел сверху, `## 1.1 (C2)`, со списком изменений.
-  4. Пересобрать ISO: `./scripts/make-iso.sh` (обновит `linoves/dist/Linoves.iso`).
+  4. Пересобрать ISO: `./scripts/make-iso.sh` (создаст `linoves/dist/Linoves-<версия>-<кодовое имя>.iso`, например `Linoves-1.4-C5.iso`).
   5. Обновить строку «Текущий выпуск» в этом файле.
 - В ответе пользователю и в сообщении коммита **всегда** писать версию и кодовое имя,
   например: «Linoves 1.1 (C2)».

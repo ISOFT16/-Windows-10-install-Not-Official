@@ -47,7 +47,7 @@ jobs:
         with:
           name: linoves
           path: |
-            linoves/dist/Linoves.iso
+            linoves/dist/Linoves-*.iso
             linoves/target/x86_64-unknown-none/release/linoves
 
       - name: Read version
@@ -66,8 +66,8 @@ jobs:
           target_commitish: ${{ github.sha }}
           make_latest: false
           body: |
-            **Linoves.iso** — загрузочный образ. Запуск:
-            * QEMU: `qemu-system-x86_64 -m 128M -cdrom Linoves.iso`
+            **Linoves-${{ steps.ver.outputs.version }}-${{ steps.ver.outputs.codename }}.iso** — загрузочный образ. Запуск:
+            * QEMU: `qemu-system-x86_64 -m 128M -cdrom Linoves-${{ steps.ver.outputs.version }}-${{ steps.ver.outputs.codename }}.iso`
             * VirtualBox: новая машина «Other / Other (64-bit)», 128 МБ памяти, подключить ISO как CD.
             * Флешка: записать Rufus в режиме DD; в BIOS включить Legacy/CSM.
-          files: linoves/dist/Linoves.iso
+          files: linoves/dist/Linoves-*.iso

@@ -38,7 +38,10 @@ menuentry "Linoves ${VERSION} (${CODENAME}) - self-test" {
 }
 CFG
 mkdir -p dist
-grub-mkrescue -o dist/Linoves.iso isodir 2>/dev/null
+# В имени файла — версия и кодовое имя, чтобы новые образы не путались со старыми
+ISO="Linoves-${VERSION}-${CODENAME}.iso"
+rm -f dist/Linoves*.iso
+grub-mkrescue -o "dist/${ISO}" isodir 2>/dev/null
 rm -rf isodir
-echo "Готово: dist/Linoves.iso (Linoves ${VERSION}, ${CODENAME})"
-echo "Проверка: qemu-system-x86_64 -m 128M -cdrom dist/Linoves.iso"
+echo "Готово: dist/${ISO}"
+echo "Проверка: qemu-system-x86_64 -m 128M -cdrom dist/${ISO}"

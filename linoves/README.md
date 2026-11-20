@@ -44,13 +44,15 @@
 
 ## Готовый ISO-образ (самый простой способ)
 
-Файл **[`dist/Linoves.iso`](dist/Linoves.iso)** уже собран, ничего компилировать не нужно.
+Образ **`dist/Linoves-<версия>-<кодовое имя>.iso`** (например, `Linoves-1.4-C5.iso`) уже собран,
+ничего компилировать не нужно. Версия в имени файла нужна, чтобы новые образы не путались
+со старыми: старый файл можно просто удалить.
 
 * **QEMU (Windows):** двойной щелчок по `dist/run.bat`, или в терминале:
-  `qemu-system-x86_64 -m 128M -cdrom Linoves.iso`
+  `qemu-system-x86_64 -m 128M -cdrom Linoves-1.4-C5.iso`
 * **QEMU (Linux/macOS):** `./dist/run.sh`
 * **VirtualBox:** «Создать» → тип *Other*, версия *Other/Unknown (64-bit)*, память 128 МБ,
-  без жёсткого диска → в настройках «Носители» подключить `Linoves.iso` как оптический диск → «Запустить».
+  без жёсткого диска → в настройках «Носители» подключить ISO-файл как оптический диск → «Запустить».
 * **Реальный компьютер:** записать ISO на флешку программой Rufus (режим **DD**) или `dd`,
   в BIOS включить загрузку Legacy/CSM и загрузиться с флешки.
 
@@ -132,10 +134,10 @@ powershell -ExecutionPolicy Bypass -File scripts\selftest.ps1   # Windows
 
 ```bash
 sudo apt install grub-pc-bin grub-common xorriso mtools   # один раз
-./scripts/make-iso.sh                                     # получится dist/Linoves.iso
+./scripts/make-iso.sh                                     # получится dist/Linoves-<версия>-<кодовое имя>.iso
 ```
 
-`Linoves.iso` можно подключить в VirtualBox/VMware как CD или записать на флешку
+ISO-файл можно подключить в VirtualBox/VMware как CD или записать на флешку
 (например, `dd` или Rufus в режиме DD). Компьютер должен загружаться в режиме
 **BIOS / Legacy (CSM)**: в чистом UEFI нет текстового режима VGA.
 

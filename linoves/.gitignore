@@ -1,4 +1,4 @@
 target/
 *.iso
-!dist/Linoves.iso
+!dist/Linoves-*.iso
 isodir/
