@@ -38,7 +38,10 @@ use core::panic::PanicInfo;
 
 use vga::Color;
 
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Версия системы (берётся из Cargo.toml): «1.0», «1.1», ...
+pub const VERSION: &str = concat!(env!("CARGO_PKG_VERSION_MAJOR"), ".", env!("CARGO_PKG_VERSION_MINOR"));
+/// Кодовое имя выпуска: C1, C2, C3, ... (увеличивается с каждым обновлением).
+pub const CODENAME: &str = "C1";
 
 fn ok(msg: core::fmt::Arguments) {
     cprint!(Color::LightGreen, "  [ OK ] ");
@@ -68,7 +71,7 @@ fn banner() {
     cprintln!(Color::LightCyan, "  ╔════════════════════════════════════════════════════╗");
     let mut title = [0u8; 52];
     let mut w = Buf { buf: &mut title, len: 0 };
-    let _ = core::fmt::Write::write_fmt(&mut w, format_args!("   RustOS {}  -  64-bit kernel written in Rust", VERSION));
+    let _ = core::fmt::Write::write_fmt(&mut w, format_args!("   RustOS {} ({})  -  64-bit kernel written in Rust", VERSION, CODENAME));
     let len = w.len;
     let text = core::str::from_utf8(&title[..len]).unwrap_or("RustOS");
     cprintln!(Color::LightCyan, "  ║{:<52}║", text);

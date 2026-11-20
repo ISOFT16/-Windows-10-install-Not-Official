@@ -50,13 +50,19 @@ jobs:
             rustos/dist/RustOS.iso
             rustos/target/x86_64-unknown-none/release/rustos
 
+      - name: Read version
+        id: ver
+        run: |
+          echo "version=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2 | cut -d. -f1,2)" >> "$GITHUB_OUTPUT"
+          echo "codename=$(grep -m1 'pub const CODENAME' src/main.rs | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
+
       # Готовый ISO в разделе Releases (удобно скачать, в т.ч. с телефона)
       - name: Publish ISO to Releases
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: rustos-${{ github.run_number }}
-          name: RustOS (сборка ${{ github.run_number }})
+          tag_name: rustos-${{ steps.ver.outputs.version }}-${{ steps.ver.outputs.codename }}-build${{ github.run_number }}
+          name: RustOS ${{ steps.ver.outputs.version }} (${{ steps.ver.outputs.codename }}), сборка ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           make_latest: false
           body: |

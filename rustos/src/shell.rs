@@ -19,6 +19,7 @@ const COMMANDS: &[(&str, &str)] = &[
     ("clear", "clear the screen (also Ctrl+L)"),
     ("echo", "echo <text>: print text"),
     ("about", "information about the system"),
+    ("version", "show the system version and codename"),
     ("uptime", "time since boot"),
     ("mem", "kernel heap usage"),
     ("memmap", "physical memory map from the bootloader"),
@@ -241,7 +242,8 @@ impl Shell {
             "help" => cmd_help(),
             "clear" | "cls" => console::clear(),
             "echo" => println!("{}", args),
-            "about" | "version" => cmd_about(),
+            "about" => cmd_about(),
+            "version" | "ver" => println!("RustOS {} ({})", crate::VERSION, crate::CODENAME),
             "uptime" => cmd_uptime(),
             "mem" | "free" => cmd_mem(),
             "memmap" => cmd_memmap(),
@@ -325,7 +327,7 @@ fn fmt_kib(bytes: u64) -> (u64, &'static str) {
 }
 
 fn cmd_about() {
-    cprintln!(Color::LightCyan, "RustOS {} (x86_64)", crate::VERSION);
+    cprintln!(Color::LightCyan, "RustOS {} ({}) x86_64", crate::VERSION, crate::CODENAME);
     println!("  Build      : {}", if cfg!(debug_assertions) { "debug" } else { "release" });
     multiboot::with(|i| {
         let loader = if i.loader_name().is_empty() { "unknown" } else { i.loader_name() };
